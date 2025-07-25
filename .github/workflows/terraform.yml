@@ -1,10 +1,14 @@
 name: CD - Terraform Deploy
 
 on:
-  workflow_run:
-    workflows: ["CI - Build and Push Docker Image"]
-    types:
-      - completed
+  workflow_dispatch:
+    inputs:
+      ECR_REPO:
+        description: "ECR Repo URL"
+        required: true
+      IMAGE_TAG:
+        description: "Docker Image Tag"
+        required: true
 
 env:
   AWS_REGION: us-east-2
@@ -16,21 +20,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Debug List Artifacts
-        run: gh run artifacts --repo ${{ github.repository }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Download Build Info
-        uses: actions/download-artifact@v4
-        with:
-          name: build-info
-
-      - name: Set Image Info
-        run: |
-          echo "ECR_REPO=$(cat ecr_repo.txt)" >> $GITHUB_ENV
-          echo "IMAGE_TAG=$(cat image-tag.txt)" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -46,6 +35,6 @@ jobs:
         run: |
           cd terraform
           terraform apply -auto-approve \
-            -var="ecr_repo_url=${{ env.ECR_REPO }}" \
-            -var="image_tag=${{ env.IMAGE_TAG }}"
+            -var="ecr_repo_url=${{ github.event.inputs.ECR_REPO }}" \
+            -var="image_tag=${{ github.event.inputs.IMAGE_TAG }}"
 
