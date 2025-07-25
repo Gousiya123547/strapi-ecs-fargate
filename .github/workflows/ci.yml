@@ -7,7 +7,7 @@ on:
 
 env:
   AWS_REGION: us-east-2
-  ECR_REPOSITORY: gousiya-strapi-ecr
+  ECR_REPOSITORY: strapi-ecs-fargate
 
 jobs:
   build:
@@ -32,10 +32,13 @@ jobs:
         run: |
           IMAGE_TAG=$(date +%Y%m%d%H%M%S)
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
-          docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/${ECR_REPOSITORY}:$IMAGE_TAG
-          docker push ${{ steps.login-ecr.outputs.registry }}/${ECR_REPOSITORY}:$IMAGE_TAG
-          echo "${{ steps.login-ecr.outputs.registry }}/${ECR_REPOSITORY}" > ecr_repo.txt
+          IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/${ECR_REPOSITORY}
+
+          docker build --no-cache -t $IMAGE_URI:latest -t $IMAGE_URI:$IMAGE_TAG .
+          docker push $IMAGE_URI:latest
+          docker push $IMAGE_URI:$IMAGE_TAG
+
+          echo "$IMAGE_URI" > ecr_repo.txt
           echo "$IMAGE_TAG" > image-tag.txt
 
       - name: Upload Artifacts
