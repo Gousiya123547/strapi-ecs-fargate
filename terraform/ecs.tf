@@ -1,4 +1,3 @@
-# ECS Task Definition
 resource "aws_ecs_task_definition" "strapi" {
   family                   = "${var.name_prefix}-${var.app_name}-task"
   network_mode             = "awsvpc"
@@ -19,6 +18,14 @@ resource "aws_ecs_task_definition" "strapi" {
           protocol      = "tcp"
         }
       ]
+      environment = [
+        { name = "DATABASE_CLIENT",   value = "postgres" },
+        { name = "DATABASE_HOST",     value = aws_db_instance.strapi_postgres.address },
+        { name = "DATABASE_PORT",     value = "5432" },
+        { name = "DATABASE_NAME",     value = "strapidb" },
+        { name = "DATABASE_USERNAME", value = "strapi" },
+        { name = "DATABASE_PASSWORD", value = "strapi123" }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -31,7 +38,6 @@ resource "aws_ecs_task_definition" "strapi" {
   ])
 }
 
-# ECS Service
 resource "aws_ecs_service" "strapi" {
   name            = "${var.name_prefix}-${var.app_name}-service"
   cluster         = aws_ecs_cluster.strapi.id
@@ -40,7 +46,7 @@ resource "aws_ecs_service" "strapi" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = data.aws_subnets.default.ids
+    subnets          = data.aws_subnets.default.ids
     assign_public_ip = true
     security_groups  = [aws_security_group.strapi.id]
   }
