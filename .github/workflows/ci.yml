@@ -44,7 +44,7 @@ jobs:
           echo "$IMAGE_URI" > ecr_repo.txt
           echo "$IMAGE_TAG" > image-tag.txt
 
-      - name: Upload Artifacts
+      - name: Upload Build Info
         uses: actions/upload-artifact@v4
         with:
           name: build-info

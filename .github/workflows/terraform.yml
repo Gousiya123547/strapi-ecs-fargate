@@ -17,10 +17,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Debug List Artifacts
+        run: gh run artifacts --repo ${{ github.repository }} --run-id ${{ github.event.workflow_run.id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Download Build Info
         uses: actions/download-artifact@v4
         with:
           name: build-info
+          path: .
 
       - name: Set Image Info
         run: |
