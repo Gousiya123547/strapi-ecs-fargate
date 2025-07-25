@@ -1,31 +1,21 @@
-name: CD - Terraform Deploy
+name: CI - Build and Push Docker Image
 
 on:
-  workflow_run:
-    workflows: ["CI - Build and Push Docker Image"]
-    types:
-      - completed
+  push:
+    branches:
+      - main
 
 env:
   AWS_REGION: us-east-2
+  ECR_REPOSITORY: strapi-ecs-fargate
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Download Build Info
-        uses: actions/download-artifact@v4
-        with:
-          name: build-info
-
-      - name: Set Image Info
-        run: |
-          echo "ECR_REPO=$(cat ecr_repo.txt)" >> $GITHUB_ENV
-          echo "IMAGE_TAG=$(cat image-tag.txt)" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -34,13 +24,25 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Terraform Init
-        run: cd terraform && terraform init
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Terraform Apply
+      - name: Build, Tag, and Push Docker Image
         run: |
-          cd terraform
-          terraform apply -auto-approve \
-            -var="ecr_repo_url=${{ env.ECR_REPO }}" \
-            -var="image_tag=${{ env.IMAGE_TAG }}"
+          IMAGE_TAG=$(date +%Y%m%d%H%M%S)
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/${ECR_REPOSITORY}:$IMAGE_TAG
+          docker push ${{ steps.login-ecr.outputs.registry }}/${ECR_REPOSITORY}:$IMAGE_TAG
+          echo "${{ steps.login-ecr.outputs.registry }}/${ECR_REPOSITORY}" > ecr_repo.txt
+          echo "$IMAGE_TAG" > image-tag.txt
+
+      - name: Upload Build Info
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-info
+          path: |
+            ecr_repo.txt
+            image-tag.txt
 
