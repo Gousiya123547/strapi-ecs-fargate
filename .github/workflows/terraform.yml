@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ECR_REPO:
-        description: "ECR Repository URL"
+        description: "ECR Repository URI"
         required: true
       IMAGE_TAG:
         description: "Docker Image Tag"
@@ -21,11 +21,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set Image Info
-        run: |
-          echo "ECR_REPO=${{ github.event.inputs.ECR_REPO }}" >> $GITHUB_ENV
-          echo "IMAGE_TAG=${{ github.event.inputs.IMAGE_TAG }}" >> $GITHUB_ENV
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -40,6 +35,6 @@ jobs:
         run: |
           cd terraform
           terraform apply -auto-approve \
-            -var="ecr_repo_url=${{ env.ECR_REPO }}" \
-            -var="image_tag=${{ env.IMAGE_TAG }}"
+            -var="ecr_repo_url=${{ github.event.inputs.ECR_REPO }}" \
+            -var="image_tag=${{ github.event.inputs.IMAGE_TAG }}"
 
