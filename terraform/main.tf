@@ -1,13 +1,4 @@
-variable "name_prefix" {
-  description = "Prefix for unique resource names"
-  default     = "gousiya"
-}
-
-variable "app_name" {
-  description = "Application name"
-  default     = "strapi"
-}
-
+# Data sources for Default VPC
 data "aws_vpc" "default" {
   default = true
 }
@@ -19,9 +10,10 @@ data "aws_subnets" "default" {
   }
 }
 
+# Security Group for Strapi and PostgreSQL
 resource "aws_security_group" "strapi" {
   name        = "${var.name_prefix}-${var.app_name}-sg"
-  description = "Allow HTTP and DB access"
+  description = "Allow HTTP, Strapi, and PostgreSQL access"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
@@ -38,7 +30,6 @@ resource "aws_security_group" "strapi" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Allow Postgres (5432) access from ECS tasks
   ingress {
     from_port   = 5432
     to_port     = 5432
@@ -54,10 +45,12 @@ resource "aws_security_group" "strapi" {
   }
 }
 
+# ECS Cluster
 resource "aws_ecs_cluster" "strapi" {
   name = "${var.name_prefix}-${var.app_name}-cluster"
 }
 
+# Application Load Balancer
 resource "aws_lb" "strapi" {
   name               = "${var.name_prefix}-${var.app_name}-alb"
   load_balancer_type = "application"
@@ -100,7 +93,7 @@ resource "aws_db_instance" "strapi_postgres" {
   engine_version         = "14"
   instance_class         = "db.t3.micro"
   identifier             = "${var.name_prefix}-strapi-db"
-  name                   = "strapidb"
+  db_name                = "strapidb" # Fixed: AWS provider v5.x uses db_name instead of name
   username               = "strapi"
   password               = "strapi123"
   publicly_accessible    = true

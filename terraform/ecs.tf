@@ -19,10 +19,10 @@ resource "aws_ecs_task_definition" "strapi" {
         }
       ]
       environment = [
-        { name = "DATABASE_CLIENT",   value = "postgres" },
-        { name = "DATABASE_HOST",     value = aws_db_instance.strapi_postgres.address },
-        { name = "DATABASE_PORT",     value = "5432" },
-        { name = "DATABASE_NAME",     value = "strapidb" },
+        { name = "DATABASE_CLIENT", value = "postgres" },
+        { name = "DATABASE_HOST", value = aws_db_instance.strapi_postgres.address },
+        { name = "DATABASE_PORT", value = "5432" },
+        { name = "DATABASE_NAME", value = "strapidb" },
         { name = "DATABASE_USERNAME", value = "strapi" },
         { name = "DATABASE_PASSWORD", value = "strapi123" }
       ]
