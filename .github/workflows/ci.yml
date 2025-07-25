@@ -46,6 +46,5 @@ jobs:
           workflow: "terraform.yml"
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           inputs: |
-            ECR_REPO=${{ steps.login-ecr.outputs.registry }}/${ECR_REPOSITORY}
-            IMAGE_TAG=${{ env.IMAGE_TAG }}
+            { "ECR_REPO": "${{ steps.login-ecr.outputs.registry }}/${ECR_REPOSITORY}", "IMAGE_TAG": "${{ env.IMAGE_TAG }}" }
 
