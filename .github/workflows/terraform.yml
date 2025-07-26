@@ -14,15 +14,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download Build Info
-        uses: actions/download-artifact@v4
-        with:
-          name: build-info
-
-      - name: Set Image Info
+      - name: Set Image Info from CI Outputs
         run: |
-          echo "ECR_REPO=$(cat ecr_repo.txt)" >> $GITHUB_ENV
-          echo "IMAGE_TAG=$(cat image-tag.txt)" >> $GITHUB_ENV
+          echo "ECR_REPO=${{ github.event.workflow_run.outputs.ecr_repo }}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${{ github.event.workflow_run.outputs.image_tag }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -30,7 +25,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
-
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
