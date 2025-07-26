@@ -1,4 +1,3 @@
-# Data sources for Default VPC
 data "aws_vpc" "default" {
   default = true
 }
@@ -10,18 +9,10 @@ data "aws_subnets" "default" {
   }
 }
 
-# Security Group for Strapi and PostgreSQL
-resource "aws_security_group" "strapi" {
-  name        = "${var.name_prefix}-${var.app_name}-sg"
-  description = "Allow HTTP, Strapi, and PostgreSQL access"
+resource "aws_security_group" "gkk_strapi" {
+  name        = "gkk-strapi-sg"
+  description = "Allow HTTP and Strapi ports"
   vpc_id      = data.aws_vpc.default.id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 
   ingress {
     from_port   = 1337
@@ -31,8 +22,8 @@ resource "aws_security_group" "strapi" {
   }
 
   ingress {
-    from_port   = 5432
-    to_port     = 5432
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -43,62 +34,5 @@ resource "aws_security_group" "strapi" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
-
-# ECS Cluster
-resource "aws_ecs_cluster" "strapi" {
-  name = "${var.name_prefix}-${var.app_name}-cluster"
-}
-
-# Application Load Balancer
-resource "aws_lb" "strapi" {
-  name               = "${var.name_prefix}-${var.app_name}-alb"
-  load_balancer_type = "application"
-  subnets            = data.aws_subnets.default.ids
-  security_groups    = [aws_security_group.strapi.id]
-}
-
-resource "aws_lb_target_group" "strapi" {
-  name        = "${var.name_prefix}-${var.app_name}-tg"
-  port        = 80
-  protocol    = "HTTP"
-  vpc_id      = data.aws_vpc.default.id
-  target_type = "ip"
-}
-
-resource "aws_lb_listener" "strapi" {
-  load_balancer_arn = aws_lb.strapi.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.strapi.arn
-  }
-}
-
-# RDS PostgreSQL Database
-resource "aws_db_subnet_group" "strapi_postgres" {
-  name       = "${var.name_prefix}-strapi-db-subnet-group"
-  subnet_ids = data.aws_subnets.default.ids
-
-  tags = {
-    Name = "${var.name_prefix}-strapi-db-subnet-group"
-  }
-}
-
-resource "aws_db_instance" "strapi_postgres" {
-  allocated_storage      = 20
-  engine                 = "postgres"
-  engine_version         = "14"
-  instance_class         = "db.t3.micro"
-  identifier             = "${var.name_prefix}-strapi-db"
-  db_name                = "strapidb" # Fixed: AWS provider v5.x uses db_name instead of name
-  username               = "strapi"
-  password               = "strapi123"
-  publicly_accessible    = true
-  skip_final_snapshot    = true
-  vpc_security_group_ids = [aws_security_group.strapi.id]
-  db_subnet_group_name   = aws_db_subnet_group.strapi_postgres.name
 }
 
